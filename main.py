@@ -2,6 +2,7 @@ import ibm
 import naive_ibm
 import time
 import os
+from itertools import islice
 DATA_PATH = '/home/tobirama/3-1/academics/ir/ass/Cross-Lingual-Translator'
 BASE_PATH = os.path.join(DATA_PATH, 'dataset')
 OUTPUT_PATH = os.path.join(os.getcwd(), 'Output') + '/'
@@ -54,7 +55,7 @@ for efile, dfile in zip(eng_list, dut_list):
         ee, dd = biwords[j]
         print(ee, dd)
         #print(ibm_model.do_alignment(ee, dd, prob_dict))
-        print(ibm_model.get_alignments(ee, dd, prob_dict, q))
+        print(' '.join(ee[i] for i in ibm_model.get_alignments(ee, dd, prob_dict, q)))
         #print(' '.join(ee[i] for i in ibm_model.do_alignment(ee, dd, prob_dict)))
     #ee = ['new','year']
     #print(' '.join(ee[i] for i in ibm_model.do_alignment(ee, ['nieuwjaar'], prob_dict)))
@@ -62,11 +63,13 @@ for efile, dfile in zip(eng_list, dut_list):
     start = time.time()
     counter, total, total_s, q = ibm_model.train_em(biwords, prob_dict, counter, total, total_s, q, 2,
     one_to_many=True)
+    for i in islice(q, 10):
+        print(i, q[i])
     print('Training Time:', round(time.time() - start, 3))
     OUTPUT_FILE1 = OUTPUT_PATH + 'prob_' + str(count) + '.txt'
     OUTPUT_FILE2 = OUTPUT_PATH + 'count_' + str(count) + '.txt'
     OUTPUT_FILE3 = OUTPUT_PATH + 'total_' + str(count) + '.txt'
     OUTPUT_FILE4 = OUTPUT_PATH + 'total_s_' + str(count) + '.txt'
     OUTPUT_FILE5 = OUTPUT_PATH + 'q_' + str(count) + '.txt'
-    ibm_model.log_output(biwords, prob_dict, counter, total, total_s, q, OUTPUT_FILE1 , OUTPUT_FILE2, OUTPUT_FILE3, OUTPUT_FILE4, OUTPUT_FILE5, 0.1)
+    ibm_model.log_output(biwords, prob_dict, counter, total, total_s, q, OUTPUT_FILE1 , OUTPUT_FILE2, OUTPUT_FILE3, OUTPUT_FILE4, OUTPUT_FILE5, 0.05)
     count += 1

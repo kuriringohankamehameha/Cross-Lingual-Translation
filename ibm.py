@@ -59,8 +59,8 @@ class IBM():
         for j,e in enumerate(e_sent):
             p = 0
             for i,d in enumerate(d_sent):
-                if q[(j, i, len(e_sent), len(d_sent)-1)]*t[e][d] > p:
-                    p = q[(j, i, len(e_sent), len(d_sent)-1)]*t[e][d]
+                if q[(i, j, len(e_sent), len(d_sent)-1)]*t[e][d] > p:
+                    p = q[(i, j, len(e_sent), len(d_sent)-1)]*t[e][d]
                     arg_max = i
             if arg_max != -1:
                 op.append(arg_max)
@@ -132,7 +132,8 @@ class IBM():
                 dut_len = len(d_sent)
                 for i in range(eng_len+1):
                     for j in range(dut_len+1):
-                        q[(j, i, eng_len, dut_len)] = 1.0/(dut_len + 1)
+                        q[(j, i, eng_len, dut_len)] = 1/float(dut_len + 1)
+                        #print(1/float(dut_len + 1))
             param1 = defaultdict(float)
             #print(q)
             param2 = defaultdict(float)
@@ -175,6 +176,7 @@ class IBM():
             for (j, i, eng, dut) in param1.keys():
                 #try:
                 q[(j, i, eng, dut)] = param1[(j, i, eng, dut)]/param2[(i, eng, dut)]
+                #print(j, i, eng, dut, q[(j, i, eng, dut)])
                 #except ZeroDivisionError:
                 #    print(i, eng, dut, param2[(i, eng, dut)])
                 #    continue
@@ -193,7 +195,7 @@ class IBM():
 
     def log_output(self, biwords, t, count, total, total_s, q, OUTPUT_FILE_1, OUTPUT_FILE_2, OUTPUT_FILE_3, OUTPUT_FILE_4, OUTPUT_FILE_5, threshold=0.07):
         start = time.time()
-        with open(OUTPUT_FILE_1, 'w') as f1, open(OUTPUT_FILE_2, 'w') as f2, open(OUTPUT_FILE_3, 'w') as f3, open(OUTPUT_FILE_4, 'w') as f4, open(OUTPUT_FILE_5, 'w') as f5:
+        with open(OUTPUT_FILE_1, 'w') as f1, open(OUTPUT_FILE_2, 'w') as f2, open(OUTPUT_FILE_3, 'w') as f3, open(OUTPUT_FILE_4, 'w') as f4:
             #f.write('ENG,DUT,PROB\n')
             for (e_sent, d_sent) in biwords:
                 gt_than = False
@@ -205,7 +207,6 @@ class IBM():
                             f1.write(e + ',' + d + ',' + str(round(t[e][d], 3)) + '\n')
                             f2.write(e + ',' + d + ',' + str(round(count[e][d], 3)) + '\n')
                             f4.write(e + ',' + str(round(total_s[e],3)) + '\n')
-                            f5.write(str(j) + ',' + str(i) + ',' + str(eng_len) + ',' + str(dut_len) + str(round(q[(j, i, eng_len, dut_len)], 3)) + '\n')
                             # To avoid duplicates
                             t[e][d] = threshold
                             gt_than = True
@@ -220,13 +221,15 @@ class IBM():
                             f1.write(e + ',' + d + ',' + str(round(t[e][d], 3)) + '\n')
                             f2.write(e + ',' + d + ',' + str(round(count[e][d], 3)) + '\n')
                             f4.write(e + ',' + str(round(total_s[e],3)) + '\n')
-                            f5.write(str(j) + ',' + str(i) + ',' + str(eng_len) + ',' + str(dut_len) + str(round(q[(j, i, eng_len, dut_len)], 3)) + '\n')
                             # To avoid duplicates
                             t[e][d] = threshold
                             gt_than = True
                     if gt_than:
                         gt_than = False
                         f3.write(d + ',' + str(round(total[d], 3)) + '\n')
+        with open(OUTPUT_FILE_5, 'w') as f5:
+            for (i, j, eng_len, dut_len) in q.keys():
+                f5.write(str(i) + ',' + str(j) + ',' + str(eng_len) + ',' + str(dut_len) + ',' + str(round(q[(i, j, eng_len, dut_len)], 3)) + '\n')
         print('Time Elapsed for IO:', round(time.time() - start, 3))
 
     def get_prob_dict_from_file(self, INPUT_FILE_1, INPUT_FILE_2, INPUT_FILE_3, INPUT_FILE_4, INPUT_FILE_5=None):
@@ -247,7 +250,7 @@ class IBM():
                 ls = line4.strip().split(',')
                 total_s[ls[0]] = float(ls[1])
                 ls = line5.strip().split(',')
-                q[(int(ls[0]), int(ls[1]), int(ls[2]))] = float(ls[3])
+                q[(int(ls[0]), int(ls[1]), int(ls[2]), int(ls[3]))] = float(ls[4])
         return t, count, total, total_s, q
 
     def get_prob_dict_from_file_no_q(self, INPUT_FILE_1, INPUT_FILE_2, INPUT_FILE_3, INPUT_FILE_4):
