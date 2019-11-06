@@ -28,7 +28,7 @@ print('Using IBM Model', ibm_model.__version__)
 
 OUTPUT_FILE = OUTPUT_PATH + 'output.txt'
 
-count = 2
+count = 3
 q = None
 for efile, dfile in zip(eng_list, dut_list):
     print('Processing Batch #%i' % count)
@@ -55,16 +55,19 @@ for efile, dfile in zip(eng_list, dut_list):
         ee, dd = biwords[j]
         print(ee, dd)
         #print(ibm_model.do_alignment(ee, dd, prob_dict))
-        print(' '.join(ee[i] for i in ibm_model.get_alignments(ee, dd, prob_dict, q)))
+        print(ibm_model.align_corpus(ee, dd, prob_dict, q))
+        #for i in islice(q, 10):
+        #    print(i, q[i])
+        #print(' '.join(ee[i] for i in ibm_model.get_alignments(ee, dd, prob_dict, q)))
         #print(' '.join(ee[i] for i in ibm_model.do_alignment(ee, dd, prob_dict)))
     #ee = ['new','year']
     #print(' '.join(ee[i] for i in ibm_model.do_alignment(ee, ['nieuwjaar'], prob_dict)))
     break
     start = time.time()
-    counter, total, total_s, q = ibm_model.train_em(biwords, prob_dict, counter, total, total_s, q, 2,
+    counter, total, total_s, q = ibm_model.train_em(biwords, prob_dict, counter, total, total_s, q, 7,
     one_to_many=True)
-    for i in islice(q, 10):
-        print(i, q[i])
+    #for i in islice(q, 10):
+    #    print(i, q[i])
     print('Training Time:', round(time.time() - start, 3))
     OUTPUT_FILE1 = OUTPUT_PATH + 'prob_' + str(count) + '.txt'
     OUTPUT_FILE2 = OUTPUT_PATH + 'count_' + str(count) + '.txt'

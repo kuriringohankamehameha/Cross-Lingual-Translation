@@ -1,5 +1,7 @@
 from collections import defaultdict, OrderedDict
+from itertools import islice
 import re
+from math import log
 import time
 
 
@@ -44,7 +46,7 @@ class IBM():
             for e in set(e_sent):
                 for d in set(d_sent):
                     t[e][d] = 1.0 / length
-        for key in temp:
+
             for nkey in temp[key]:
                 t[key][nkey] = temp[key][nkey]
         del temp
@@ -61,6 +63,7 @@ class IBM():
             for i,d in enumerate(d_sent):
                 if q[(i, j, len(e_sent), len(d_sent)-1)]*t[e][d] > p:
                     p = q[(i, j, len(e_sent), len(d_sent)-1)]*t[e][d]
+                    #print(e, d, p)
                     arg_max = i
             if arg_max != -1:
                 op.append(arg_max)
@@ -114,6 +117,75 @@ class IBM():
         else:
             raise NotImplementedError
 
+    def align_sentence(self, e_sent, d_sent, t, q, to_lang='eng'):
+        if to_lang == 'eng':
+            # Get the dutch to english alignments
+            d_to_e = []
+            e_len = len(e_sent)
+            d_len = len(d_sent)
+            for i, d in enumerate(d_sent):
+                probable_alignment = 0
+                max_prob = 0
+                for j, e in enumerate(e_sent):
+                    if q[(j, i, e_len, d_len)] > 0 and e in t and d in t[e]:
+                        #print(q[(j, i, e_len, d_len)], e)
+                        temp = q[(j, i, e_len, d_len)] * t[e][d]
+                    else:
+                        temp = -1
+                    if temp > max_prob:
+                        max_prob = temp
+                        probable_alignment = j
+                d_to_e.append(probable_alignment)
+            print(' '.join(e_sent[i] for i in d_to_e))
+            return d_to_e
+        else:
+            raise NotImplementedError
+
+    def align_and_predict(self, e_sent, d_sent, t, q, to_lang='eng'):
+        if to_lang == 'eng':
+            e_len = len(e_sent)
+            d_len = len(d_sent)
+            a = self.align_sentence(e_sent, d_sent, t, q)
+            prob = 0
+            assert d_len == len(a)
+            #for i in islice(q, 10):
+            #    print(i, q[i])
+            for i, d in enumerate(d_sent):
+                e = e_sent[a[i]]
+                if q[(a[i], i, e_len, d_len)] > 0 and e in t and d in t[e]:
+                    try:
+                        prob += abs(log(q[(a[i], i, e_len, d_len)] * t[e][d]))
+                    except ValueError:
+                        print("---ValueError at---")
+                        print(a[i], i, e_len, d_len)
+                        print(e)
+                        print(d)
+                        print(t[e][d])
+                        print("-----------------")
+                        prob += -500
+                else:
+                    prob += -500
+            return prob
+        else:
+            raise NotImplementedError
+
+    def align_corpus(self, e_sent, d_sent, t, q, align_lang='eng'):
+        if align_lang == 'eng':
+            for d in d_sent:
+                max_idx = -1
+                max_prob = 0
+                for i, e in enumerate(e_sent):
+                    prob = self.align_and_predict(e_sent, d_sent, t, q)
+                    if i == 0:
+                        max_prob = prob
+                        max_idx = i
+                    if prob > max_prob:
+                        max_prob = prob
+                        max_idx = i
+                return ' '.join(e[max_idx][1:])
+        else:
+            raise NotImplementedError
+
     def train_em(self, biwords, t, count=None, total=None, total_s=None, q=None, num_loops=1000, one_to_many=False):
         # Performs the EM Algorithm on the IBM Model
         i = 10
@@ -127,16 +199,15 @@ class IBM():
             param2 = defaultdict(float)
         if q is None:
             q = defaultdict(float)
-            for (e_sent, d_sent) in biwords:
-                eng_len = len(e_sent)
-                dut_len = len(d_sent)
-                for i in range(eng_len+1):
-                    for j in range(dut_len+1):
+        param1 = defaultdict(float)
+        param2 = defaultdict(float)
+        for (e_sent, d_sent) in biwords:
+            eng_len = len(e_sent)
+            dut_len = len(d_sent)
+            for i in range(eng_len+1):
+                for j in range(dut_len+1):
+                    if q[(j, i, eng_len, dut_len)] == 0:
                         q[(j, i, eng_len, dut_len)] = 1/float(dut_len + 1)
-                        #print(1/float(dut_len + 1))
-            param1 = defaultdict(float)
-            #print(q)
-            param2 = defaultdict(float)
         while i > 0.01 and curr_iteration <= num_loops:
             start = time.time()
             print('Loop #%i' % curr_iteration)
@@ -154,8 +225,6 @@ class IBM():
                 for i,e in enumerate(e_sent):
                     for j,d in enumerate(d_sent):
                         # Get the normalized counts for every (e, d) pair
-                        ew = e
-                        dw = d
                         delta = (t[e][d] / total_s[e]) * (q[(j, i, eng_len, dut_len)])
                         count[e][d] += delta
                         total[d] += delta
