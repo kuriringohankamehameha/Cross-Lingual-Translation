@@ -17,6 +17,7 @@ class IBM():
     """
     def __init__(self, version):
         self.__version__ = version
+        self.dtoe_alignments = None
 
     def get_biwords(self, file1, file2):
         biwords = [[re.sub(r'[^\w]', ' ', sentence).lower().split()
@@ -155,6 +156,7 @@ class IBM():
                 if q[(a[i], i, e_len, d_len)] > 0 and e in t and d in t[e]:
                     try:
                         prob += abs(log(q[(a[i], i, e_len, d_len)] * t[e][d]))
+                        print(prob)
                     except ValueError:
                         print("---ValueError at---")
                         print(a[i], i, e_len, d_len)
@@ -162,9 +164,9 @@ class IBM():
                         print(d)
                         print(t[e][d])
                         print("-----------------")
-                        prob += -500
+                        prob += -50
                 else:
-                    prob += -500
+                    prob += -50
             return prob
         else:
             raise NotImplementedError
@@ -185,6 +187,26 @@ class IBM():
                 return ' '.join(e[max_idx][1:])
         else:
             raise NotImplementedError
+
+    def write_alignments(self, biwords, t, q, align_lang='eng'):
+        if align_lang == 'eng':
+            with open(OUTPUT_FILE, 'w') as f:
+                for e_sent, d_sent in biwords:
+                    f.write(','.join(str(i) for i in self.align_sentence(e_sent, d_sent, t, q, 'eng')))
+                    f.write('\n')
+        else:
+            raise NotImplementedError
+
+    def read_dutchtoeng_alignments(self, INPUT_FILE):
+        #Reads dutch->english alignments
+        self.dtoe_alignments = []
+        with open(INPUT_FILE, 'r') as f:
+            for line in f:
+                ls = line.strip().split(',')
+                self.dtoe_alignments.append([int(i) for i in ls])
+
+    def read_engtodutch_alignments(self, INPUT_FILE):
+        raise NotImplementedError
 
     def train_em(self, biwords, t, count=None, total=None, total_s=None, q=None, num_loops=1000, one_to_many=False):
         # Performs the EM Algorithm on the IBM Model

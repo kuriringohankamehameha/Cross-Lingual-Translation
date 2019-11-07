@@ -56,8 +56,8 @@ for efile, dfile in zip(eng_list, dut_list):
         print(ee, dd)
         #print(ibm_model.do_alignment(ee, dd, prob_dict))
         print(ibm_model.align_corpus(ee, dd, prob_dict, q))
-        #for i in islice(q, 10):
-        #    print(i, q[i])
+        for i in islice(q, 10):
+            print(i, q[i])
         #print(' '.join(ee[i] for i in ibm_model.get_alignments(ee, dd, prob_dict, q)))
         #print(' '.join(ee[i] for i in ibm_model.do_alignment(ee, dd, prob_dict)))
     #ee = ['new','year']
