@@ -8,10 +8,10 @@ A Statistical model that translates across languages via phrase based translatio
 ## Sample Queries
 ```bash
 >> ...
->> import cldt
->> from cldt import CLDT
->> cldt.train(('english', 'dutch'), ('English.txt', 'Dutch.txt'))
->> cldt.prepare_translation(('english', 'dutch')) 
+>> import ibm
+>> from ibm import CLDT
+>> CLDT.train(('english', 'dutch'), ('English.txt', 'Dutch.txt'))
+>> CLDT.prepare_translation(('english', 'dutch')) 
 >> CLDT(input='Good morning', to_lang='dutch', is_file=False)
 'Goedemorgen'
 >> CLDT(input='How are you', to_lang='dutch')
